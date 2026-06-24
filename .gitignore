@@ -5,3 +5,6 @@ ra_tracker/private_key.pem
 ra_tracker/credentials.enc
 ra_tracker/cache/
 ra_tracker/__pycache__/
+dist/
+build/
+*.spec
