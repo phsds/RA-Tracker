@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid #3a3a5e;
                 border-radius: 4px;
                 padding: 4px 8px;
-                font-size: 13px;
+                font-size: 10px;
             }
             QPushButton {
                 background-color: #4a4a8a;
@@ -50,7 +50,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid #5a5aaa;
                 border-radius: 4px;
                 padding: 8px 20px;
-                font-size: 13px;
+                font-size: 10px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
         row1.addWidget(self.login_btn)
 
         self.login_status = QLabel("")
-        self.login_status.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        self.login_status.setFont(QFont("Press Start 2P", 7, QFont.Weight.Bold))
         self.login_status.setStyleSheet("color: #888888; padding: 2px 4px;")
         row1.addWidget(self.login_status)
 

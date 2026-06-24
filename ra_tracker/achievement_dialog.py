@@ -7,13 +7,57 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QWidget, QGridLayout,
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QFont, QColor
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QPixmap, QFont, QColor, QPainter, QBrush, QPen
 
 from .api import RAClient
 from . import cache as cache_mgr
 
 log = logging.getLogger(__name__)
+
+
+class ComparisonBar(QWidget):
+    def __init__(self, soft_value: int, hard_value: int, parent=None):
+        super().__init__(parent)
+        self._soft = soft_value
+        self._hard = hard_value
+        self._total = soft_value + hard_value
+        self._soft_pct = f"{soft_value * 100 // self._total}%" if self._total else "0%"
+        self._hard_pct = f"{hard_value * 100 // self._total}%" if self._total else "0%"
+        self.setFixedHeight(22)
+        self.setMinimumWidth(120)
+
+    def sizeHint(self):
+        return QSize(200, 22)
+
+    def paintEvent(self, event):
+        if self._total == 0:
+            return
+        p = QPainter(self)
+        w = self.width()
+        h = self.height()
+        soft_w = int(w * self._soft / self._total)
+        hard_w = w - soft_w
+
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(QColor("#66ff66")))
+        p.drawRect(0, 0, soft_w, h)
+        p.setBrush(QBrush(QColor("#ff4444")))
+        p.drawRect(soft_w, 0, hard_w, h)
+
+        font = QFont("Press Start 2P", 6)
+        p.setFont(font)
+        if soft_w > 40:
+            p.setPen(QPen(QColor("#ff4444")))
+            p.drawText(4, 0, soft_w - 4, h, Qt.AlignmentFlag.AlignVCenter, self._soft_pct)
+        if hard_w > 40:
+            p.setPen(QPen(QColor("#66ff66")))
+            p.drawText(soft_w + 4, 0, hard_w - 4, h, Qt.AlignmentFlag.AlignVCenter, self._hard_pct)
+
+        p.setPen(QPen(QColor("#3a3a5e"), 1))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawRect(0, 0, w - 1, h - 1)
+        p.end()
 
 
 class AchievementDetailDialog(QDialog):
@@ -52,14 +96,14 @@ class AchievementDetailDialog(QDialog):
 
         title = ach.get("Title", ach.get("title", "?"))
         title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+        title_label.setFont(QFont("Press Start 2P", 14, QFont.Weight.Bold))
         title_label.setStyleSheet("color: #ffffff; padding: 4px 0px;")
         title_label.setWordWrap(True)
         info_layout.addWidget(title_label)
 
         description = ach.get("Description", ach.get("description", ""))
         desc_label = QLabel(description)
-        desc_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Light))
+        desc_label.setFont(QFont("Press Start 2P", 7, QFont.Weight.Light))
         desc_label.setStyleSheet("color: #bbbbbb; font-style: italic; padding: 2px 0px;")
         desc_label.setWordWrap(True)
         info_layout.addWidget(desc_label)
@@ -70,7 +114,7 @@ class AchievementDetailDialog(QDialog):
         if console:
             game_text += f"  |  {console}"
         game_label = QLabel(game_text)
-        game_label.setFont(QFont("Segoe UI", 11, QFont.Weight.DemiBold))
+        game_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.DemiBold))
         game_label.setStyleSheet("color: #88aaff; padding: 2px 0px;")
         info_layout.addWidget(game_label)
 
@@ -93,25 +137,25 @@ class AchievementDetailDialog(QDialog):
         meta_layout.setSpacing(12)
 
         pts_label = QLabel(f"⚡ {points} pts")
-        pts_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        pts_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
         pts_label.setStyleSheet("color: #ffd700;")
         meta_layout.addWidget(pts_label)
 
         if true_ratio:
             tr_label = QLabel(f"🎯 {true_ratio}")
-            tr_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+            tr_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
             tr_label.setStyleSheet("color: #66ff66;")
             meta_layout.addWidget(tr_label)
 
         if is_hardcore:
             hc_label = QLabel("💀 HARDCORE")
-            hc_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+            hc_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
             hc_label.setStyleSheet("color: #ff4444;")
             meta_layout.addWidget(hc_label)
 
         if date_str:
             dt_label = QLabel(f"📅 {date_str}")
-            dt_label.setFont(QFont("Segoe UI", 10))
+            dt_label.setFont(QFont("Press Start 2P", 8))
             dt_label.setStyleSheet("color: #aaaaaa;")
             meta_layout.addWidget(dt_label)
 
@@ -133,7 +177,7 @@ class AchievementDetailDialog(QDialog):
                 border: none;
                 border-radius: 4px;
                 padding: 8px 20px;
-                font-size: 13px;
+                font-size: 10px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -206,40 +250,21 @@ class AchievementDetailDialog(QDialog):
         right_layout.setSpacing(8)
 
         section_title = QLabel("📊 Game Statistics")
-        section_title.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        section_title.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
         section_title.setStyleSheet("color: #ffd700; padding-bottom: 4px;")
         right_layout.addWidget(section_title)
 
         num_achs = data.get("NumAchievements", data.get("numAchievements", 0))
-        players = data.get("NumDistinctPlayers", data.get("numDistinctPlayersCasual", 0))
-        players_hc = data.get("NumDistinctPlayersHardcore", data.get("numDistinctPlayersHardcore", 0))
 
         publisher = data.get("Publisher", data.get("publisher", ""))
         developer = data.get("Developer", data.get("developer", ""))
         genre = data.get("Genre", data.get("genre", ""))
         released = data.get("Released", data.get("released", ""))
 
-        stats_grid = QGridLayout()
-        stats_grid.setSpacing(6)
-        row = 0
-
-        stat_items = [
-            ("🏆 Achievements", str(num_achs), "#ffd700"),
-            ("👥 Players", str(players), "#66ff66"),
-            ("💀 Hardcore", str(players_hc), "#ff4444"),
-        ]
-        for label_text, value, color in stat_items:
-            lbl = QLabel(label_text)
-            lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.DemiBold))
-            lbl.setStyleSheet("color: #888888;")
-            stats_grid.addWidget(lbl, row, 0)
-            val = QLabel(value)
-            val.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
-            val.setStyleSheet(f"color: {color};")
-            stats_grid.addWidget(val, row, 1)
-            row += 1
-
-        right_layout.addLayout(stats_grid)
+        achs_label = QLabel(f"🏆 Achievements:  {num_achs}")
+        achs_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
+        achs_label.setStyleSheet("color: #ffd700; padding: 4px 0px;")
+        right_layout.addWidget(achs_label)
 
         info_lines = []
         if publisher:
@@ -256,11 +281,11 @@ class AchievementDetailDialog(QDialog):
             info_grid.setSpacing(4)
             for i, (lbl, val) in enumerate(info_lines):
                 l = QLabel(lbl)
-                l.setFont(QFont("Segoe UI", 9, QFont.Weight.DemiBold))
+                l.setFont(QFont("Press Start 2P", 7, QFont.Weight.DemiBold))
                 l.setStyleSheet("color: #888888;")
                 info_grid.addWidget(l, i, 0)
                 v = QLabel(val)
-                v.setFont(QFont("Segoe UI", 9))
+                v.setFont(QFont("Press Start 2P", 7))
                 v.setStyleSheet("color: #cccccc;")
                 info_grid.addWidget(v, i, 1)
             right_layout.addLayout(info_grid)
@@ -272,32 +297,43 @@ class AchievementDetailDialog(QDialog):
             right_layout.addWidget(QLabel(""))
 
             ach_title = QLabel("📈 Achievement Stats")
-            ach_title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+            ach_title.setFont(QFont("Press Start 2P", 9, QFont.Weight.Bold))
             ach_title.setStyleSheet("color: #88aaff; padding-bottom: 2px;")
             right_layout.addWidget(ach_title)
 
             num_awarded = ach_data.get("NumAwarded", ach_data.get("numAwarded", 0))
             num_awarded_hc = ach_data.get("NumAwardedHardcore", ach_data.get("numAwardedHardcore", 0))
+            total_awarded = num_awarded + num_awarded_hc
             author = ach_data.get("Author", ach_data.get("author", ""))
 
             ach_grid = QGridLayout()
             ach_grid.setSpacing(4)
             ach_items = [
-                ("🎖️ Earned by", str(num_awarded), "#66ff66"),
+                ("🎖️ Softcore", str(num_awarded), "#66ff66"),
                 ("💀 Hardcore", str(num_awarded_hc), "#ff4444"),
             ]
             if author:
                 ach_items.append(("✍️ Author", author, "#88aaff"))
             for i, (lbl, val, color) in enumerate(ach_items):
                 l = QLabel(lbl)
-                l.setFont(QFont("Segoe UI", 9, QFont.Weight.DemiBold))
+                l.setFont(QFont("Press Start 2P", 7, QFont.Weight.DemiBold))
                 l.setStyleSheet("color: #888888;")
                 ach_grid.addWidget(l, i, 0)
                 v = QLabel(val)
-                v.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+                v.setFont(QFont("Press Start 2P", 7, QFont.Weight.Bold))
                 v.setStyleSheet(f"color: {color};")
                 ach_grid.addWidget(v, i, 1)
             right_layout.addLayout(ach_grid)
+
+            if num_awarded or num_awarded_hc:
+                ach_bar_row = QHBoxLayout()
+                ach_bar_row.setSpacing(8)
+                ach_bar_label = QLabel("Earned Split:")
+                ach_bar_label.setFont(QFont("Press Start 2P", 6))
+                ach_bar_label.setStyleSheet("color: #888888;")
+                ach_bar_row.addWidget(ach_bar_label)
+                ach_bar_row.addWidget(ComparisonBar(num_awarded, num_awarded_hc), 1)
+                right_layout.addLayout(ach_bar_row)
 
         right_layout.addStretch()
         outer_layout.addLayout(right_layout, 1)

@@ -1,9 +1,7 @@
 .vscode
 .venv
 .opencode
-ra_tracker/private_key.pem
-ra_tracker/credentials.enc
-ra_tracker/cache/
+data/
 ra_tracker/__pycache__/
 dist/
 build/

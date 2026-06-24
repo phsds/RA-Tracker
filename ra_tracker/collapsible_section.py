@@ -35,7 +35,7 @@ class CollapsibleSection(QFrame):
                 border-radius: 8px;
                 padding: 10px 16px;
                 text-align: left;
-                font-size: 13px;
+                font-size: 10px;
                 font-weight: bold;
             }
             QPushButton:hover {

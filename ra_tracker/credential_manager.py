@@ -15,7 +15,9 @@ CRED_FILE = "credentials.enc"
 
 
 def _get_dir() -> Path:
-    return Path(__file__).parent.resolve()
+    d = Path(__file__).resolve().parent.parent / "data"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 def _key_path() -> Path:
@@ -98,7 +100,7 @@ def decrypt_credentials() -> dict[str, str] | None:
 
 
 def clear_credentials():
-    path = _cred_path()
-    if path.exists():
-        os.remove(path)
-        log.info("Credenciais removidas")
+    for path in (_cred_path(), _key_path()):
+        if path.exists():
+            os.remove(path)
+            log.info("Removido: %s", path.name)
