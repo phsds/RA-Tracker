@@ -41,6 +41,17 @@ Desktop application to track your RetroAchievements progress. Displays all achie
    python main.py
    ```
 
+## Building a Standalone Executable
+
+You can build a single `.exe` file with PyInstaller:
+
+```
+pip install pyinstaller
+pyinstaller --onefile --noconsole --icon=RetroAchievements.ico --add-data "ra_tracker\images;ra_tracker\images" main.py
+```
+
+The executable will be created in the `dist/` folder. The `--add-data` flag bundles the images folder so the logo and icon work correctly. The `--noconsole` flag hides the terminal window.
+
 ## Usage
 
 1. Get your API Key from [RetroAchievements](https://retroachievements.org/controlpanel.php)
