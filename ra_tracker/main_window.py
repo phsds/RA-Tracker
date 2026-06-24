@@ -1,3 +1,4 @@
+import sys
 import logging
 from collections import OrderedDict
 from pathlib import Path
@@ -22,10 +23,16 @@ log = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
+    @staticmethod
+    def _resource_path() -> Path:
+        if getattr(sys, "frozen", False):
+            return Path(sys._MEIPASS) / "ra_tracker"
+        return Path(__file__).parent
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("RA Tracker - RetroAchievements")
-        icon_path = Path(__file__).parent / "images" / "RetroAchievements.ico"
+        icon_path = self._resource_path() / "images" / "RetroAchievements.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
         self.setMinimumSize(800, 600)
@@ -42,7 +49,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid #3a3a5e;
                 border-radius: 4px;
                 padding: 4px 8px;
-                font-size: 10px;
+                font-size: 12px;
             }
             QPushButton {
                 background-color: #4a4a8a;
@@ -50,7 +57,7 @@ class MainWindow(QMainWindow):
                 border: 1px solid #5a5aaa;
                 border-radius: 4px;
                 padding: 8px 20px;
-                font-size: 10px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -73,7 +80,7 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(8)
         main_layout.setContentsMargins(12, 12, 12, 12)
 
-        logo_path = Path(__file__).parent / "images" / "RetroAchievements.png"
+        logo_path = self._resource_path() / "images" / "RetroAchievements.png"
         logo_pixmap = QPixmap(str(logo_path))
         title_label = QLabel()
         if not logo_pixmap.isNull():
@@ -108,7 +115,7 @@ class MainWindow(QMainWindow):
         row1.addWidget(self.login_btn)
 
         self.login_status = QLabel("")
-        self.login_status.setFont(QFont("Press Start 2P", 7, QFont.Weight.Bold))
+        self.login_status.setFont(QFont("Press Start 2P", 9, QFont.Weight.Bold))
         self.login_status.setStyleSheet("color: #888888; padding: 2px 4px;")
         row1.addWidget(self.login_status)
 

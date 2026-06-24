@@ -7,7 +7,7 @@ from PIL import Image
 
 log = logging.getLogger(__name__)
 
-CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "cache"
+CACHE_DIR = Path.home() / ".ra_tracker" / "cache"
 
 
 def _ensure_dir():

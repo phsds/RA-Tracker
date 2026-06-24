@@ -72,14 +72,14 @@ class AchievementCard(QFrame):
 
         title = ach.get("Title", ach.get("title", "?"))
         title_label = QLabel(title)
-        title_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
+        title_label.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
         title_label.setStyleSheet("color: #ffffff;")
         title_label.setWordWrap(True)
         info_layout.addWidget(title_label)
 
         description = ach.get("Description", ach.get("description", ""))
         desc_label = QLabel(description)
-        desc_label.setFont(QFont("Press Start 2P", 7))
+        desc_label.setFont(QFont("Press Start 2P", 9))
         desc_label.setStyleSheet("color: #aaaaaa;")
         desc_label.setWordWrap(True)
         info_layout.addWidget(desc_label)
@@ -90,7 +90,7 @@ class AchievementCard(QFrame):
         if console:
             game_text += f"  |  {console}"
         game_label = QLabel(game_text)
-        game_label.setFont(QFont("Press Start 2P", 6))
+        game_label.setFont(QFont("Press Start 2P", 8))
         game_label.setStyleSheet("color: #888888;")
         info_layout.addWidget(game_label)
 
@@ -110,7 +110,7 @@ class AchievementCard(QFrame):
         if date_str:
             meta_text += f"  |  {date_str}"
         meta_label = QLabel(meta_text)
-        meta_label.setFont(QFont("Press Start 2P", 6))
+        meta_label.setFont(QFont("Press Start 2P", 8))
         if is_hardcore:
             meta_label.setStyleSheet("color: #ffd700;")
         else:

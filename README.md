@@ -47,7 +47,7 @@ You can build a single `.exe` file with PyInstaller:
 
 ```
 pip install pyinstaller
-pyinstaller --onefile --noconsole --icon=RetroAchievements.ico --add-data "ra_tracker\images;ra_tracker\images" main.py
+pyinstaller --onefile --noconsole --icon=RetroAchievements.ico --add-data "ra_tracker\images;ra_tracker\images" --add-data "ra_tracker\fonts;ra_tracker\fonts" main.py
 ```
 
 The executable will be created in the `dist/` folder. The `--add-data` flag bundles the images folder so the logo and icon work correctly. The `--noconsole` flag hides the terminal window.
@@ -82,8 +82,8 @@ ra_tracker/
 
 ## Data Storage
 
-- **Credentials**: `ra_tracker/private_key.pem` + `ra_tracker/credentials.enc`
-- **Cache**: `ra_tracker/cache/` — achievements JSON, badge PNGs, game data JSON
+- **Credentials**: `%USERPROFILE%\.ra_tracker\private_key.pem` + `credentials.enc`
+- **Cache**: `%USERPROFILE%\.ra_tracker\cache/` — achievements JSON, badge PNGs, game data JSON
 
 ## License
 

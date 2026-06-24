@@ -45,7 +45,7 @@ class ComparisonBar(QWidget):
         p.setBrush(QBrush(QColor("#ff4444")))
         p.drawRect(soft_w, 0, hard_w, h)
 
-        font = QFont("Press Start 2P", 6)
+        font = QFont("Press Start 2P", 8)
         p.setFont(font)
         if soft_w > 40:
             p.setPen(QPen(QColor("#ff4444")))
@@ -96,14 +96,14 @@ class AchievementDetailDialog(QDialog):
 
         title = ach.get("Title", ach.get("title", "?"))
         title_label = QLabel(title)
-        title_label.setFont(QFont("Press Start 2P", 14, QFont.Weight.Bold))
+        title_label.setFont(QFont("Press Start 2P", 16, QFont.Weight.Bold))
         title_label.setStyleSheet("color: #ffffff; padding: 4px 0px;")
         title_label.setWordWrap(True)
         info_layout.addWidget(title_label)
 
         description = ach.get("Description", ach.get("description", ""))
         desc_label = QLabel(description)
-        desc_label.setFont(QFont("Press Start 2P", 7, QFont.Weight.Light))
+        desc_label.setFont(QFont("Press Start 2P", 11, QFont.Weight.Light))
         desc_label.setStyleSheet("color: #bbbbbb; font-style: italic; padding: 2px 0px;")
         desc_label.setWordWrap(True)
         info_layout.addWidget(desc_label)
@@ -114,7 +114,7 @@ class AchievementDetailDialog(QDialog):
         if console:
             game_text += f"  |  {console}"
         game_label = QLabel(game_text)
-        game_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.DemiBold))
+        game_label.setFont(QFont("Press Start 2P", 10, QFont.Weight.DemiBold))
         game_label.setStyleSheet("color: #88aaff; padding: 2px 0px;")
         info_layout.addWidget(game_label)
 
@@ -137,25 +137,25 @@ class AchievementDetailDialog(QDialog):
         meta_layout.setSpacing(12)
 
         pts_label = QLabel(f"⚡ {points} pts")
-        pts_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
+        pts_label.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
         pts_label.setStyleSheet("color: #ffd700;")
         meta_layout.addWidget(pts_label)
 
         if true_ratio:
             tr_label = QLabel(f"🎯 {true_ratio}")
-            tr_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
+            tr_label.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
             tr_label.setStyleSheet("color: #66ff66;")
             meta_layout.addWidget(tr_label)
 
         if is_hardcore:
             hc_label = QLabel("💀 HARDCORE")
-            hc_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
+            hc_label.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
             hc_label.setStyleSheet("color: #ff4444;")
             meta_layout.addWidget(hc_label)
 
         if date_str:
             dt_label = QLabel(f"📅 {date_str}")
-            dt_label.setFont(QFont("Press Start 2P", 8))
+            dt_label.setFont(QFont("Press Start 2P", 10))
             dt_label.setStyleSheet("color: #aaaaaa;")
             meta_layout.addWidget(dt_label)
 
@@ -177,7 +177,7 @@ class AchievementDetailDialog(QDialog):
                 border: none;
                 border-radius: 4px;
                 padding: 8px 20px;
-                font-size: 10px;
+                font-size: 12px;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -250,7 +250,7 @@ class AchievementDetailDialog(QDialog):
         right_layout.setSpacing(8)
 
         section_title = QLabel("📊 Game Statistics")
-        section_title.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
+        section_title.setFont(QFont("Press Start 2P", 12, QFont.Weight.Bold))
         section_title.setStyleSheet("color: #ffd700; padding-bottom: 4px;")
         right_layout.addWidget(section_title)
 
@@ -262,7 +262,7 @@ class AchievementDetailDialog(QDialog):
         released = data.get("Released", data.get("released", ""))
 
         achs_label = QLabel(f"🏆 Achievements:  {num_achs}")
-        achs_label.setFont(QFont("Press Start 2P", 8, QFont.Weight.Bold))
+        achs_label.setFont(QFont("Press Start 2P", 10, QFont.Weight.Bold))
         achs_label.setStyleSheet("color: #ffd700; padding: 4px 0px;")
         right_layout.addWidget(achs_label)
 
@@ -281,11 +281,11 @@ class AchievementDetailDialog(QDialog):
             info_grid.setSpacing(4)
             for i, (lbl, val) in enumerate(info_lines):
                 l = QLabel(lbl)
-                l.setFont(QFont("Press Start 2P", 7, QFont.Weight.DemiBold))
+                l.setFont(QFont("Press Start 2P", 9, QFont.Weight.DemiBold))
                 l.setStyleSheet("color: #888888;")
                 info_grid.addWidget(l, i, 0)
                 v = QLabel(val)
-                v.setFont(QFont("Press Start 2P", 7))
+                v.setFont(QFont("Press Start 2P", 9))
                 v.setStyleSheet("color: #cccccc;")
                 info_grid.addWidget(v, i, 1)
             right_layout.addLayout(info_grid)
@@ -297,7 +297,7 @@ class AchievementDetailDialog(QDialog):
             right_layout.addWidget(QLabel(""))
 
             ach_title = QLabel("📈 Achievement Stats")
-            ach_title.setFont(QFont("Press Start 2P", 9, QFont.Weight.Bold))
+            ach_title.setFont(QFont("Press Start 2P", 11, QFont.Weight.Bold))
             ach_title.setStyleSheet("color: #88aaff; padding-bottom: 2px;")
             right_layout.addWidget(ach_title)
 
@@ -316,11 +316,11 @@ class AchievementDetailDialog(QDialog):
                 ach_items.append(("✍️ Author", author, "#88aaff"))
             for i, (lbl, val, color) in enumerate(ach_items):
                 l = QLabel(lbl)
-                l.setFont(QFont("Press Start 2P", 7, QFont.Weight.DemiBold))
+                l.setFont(QFont("Press Start 2P", 9, QFont.Weight.DemiBold))
                 l.setStyleSheet("color: #888888;")
                 ach_grid.addWidget(l, i, 0)
                 v = QLabel(val)
-                v.setFont(QFont("Press Start 2P", 7, QFont.Weight.Bold))
+                v.setFont(QFont("Press Start 2P", 9, QFont.Weight.Bold))
                 v.setStyleSheet(f"color: {color};")
                 ach_grid.addWidget(v, i, 1)
             right_layout.addLayout(ach_grid)
@@ -329,7 +329,7 @@ class AchievementDetailDialog(QDialog):
                 ach_bar_row = QHBoxLayout()
                 ach_bar_row.setSpacing(8)
                 ach_bar_label = QLabel("Earned Split:")
-                ach_bar_label.setFont(QFont("Press Start 2P", 6))
+                ach_bar_label.setFont(QFont("Press Start 2P", 8))
                 ach_bar_label.setStyleSheet("color: #888888;")
                 ach_bar_row.addWidget(ach_bar_label)
                 ach_bar_row.addWidget(ComparisonBar(num_awarded, num_awarded_hc), 1)

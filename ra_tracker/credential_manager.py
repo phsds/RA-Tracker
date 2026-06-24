@@ -15,7 +15,7 @@ CRED_FILE = "credentials.enc"
 
 
 def _get_dir() -> Path:
-    d = Path(__file__).resolve().parent.parent / "data"
+    d = Path.home() / ".ra_tracker"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

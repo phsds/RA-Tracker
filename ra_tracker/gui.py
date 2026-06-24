@@ -10,17 +10,23 @@ from .main_window import MainWindow
 log = logging.getLogger(__name__)
 
 
+def _resource_path() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "ra_tracker"
+    return Path(__file__).parent
+
+
 def run():
     app = QApplication(sys.argv)
 
-    font_path = Path(__file__).parent / "fonts" / "PressStart2P-Regular.ttf"
+    font_path = _resource_path() / "fonts" / "PressStart2P-Regular.ttf"
     if font_path.exists():
         fid = QFontDatabase.addApplicationFont(str(font_path))
         if fid >= 0:
             families = QFontDatabase.applicationFontFamilies(fid)
             if families:
-                app.setFont(QFont(families[0], 8))
-                log.info("Font loaded: %s", families[0])
+                app.setFont(QFont(families[0], 10))
+                log.info("Font loaded: %s from %s", families[0], font_path)
             else:
                 log.warning("Font file loaded but no families found")
         else:
