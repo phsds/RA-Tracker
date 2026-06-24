@@ -1,0 +1,7 @@
+.vscode
+.venv
+.opencode
+ra_tracker/private_key.pem
+ra_tracker/credentials.enc
+ra_tracker/cache/
+ra_tracker/__pycache__/
