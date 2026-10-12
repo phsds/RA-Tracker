@@ -1,3 +1,5 @@
+"""Clickable card widget that summarizes a single achievement."""
+
 import logging
 from datetime import datetime
 from io import BytesIO
@@ -15,6 +17,12 @@ log = logging.getLogger(__name__)
 
 
 class AchievementCard(QFrame):
+    """Compact achievement summary: badge, title, description, metadata.
+
+    Emits ``clicked`` (with the raw achievement dict) when the card is
+    clicked, so the parent window can open the detail dialog.
+    """
+
     clicked = pyqtSignal(dict)
 
     def __init__(self, ach: dict, parent=None):
@@ -25,8 +33,11 @@ class AchievementCard(QFrame):
         self.setMaximumHeight(120)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
+        # The API returns different field names depending on the endpoint. Try
+        # both casings so the card works regardless of the data source.
         is_hardcore = ach.get("HardcoreMode", 0) == 1 or ach.get("hardcoreMode", False)
 
+        # Hardcore runs get a gold border so they stand out from softcore.
         if is_hardcore:
             self.setStyleSheet("""
                 AchievementCard {
@@ -102,6 +113,7 @@ class AchievementCard(QFrame):
                 dt = datetime.strptime(date_raw, "%Y-%m-%d %H:%M:%S")
                 date_str = dt.strftime("%d/%m/%Y %H:%M")
             except ValueError:
+                # Unknown format: show the raw API string instead of failing.
                 date_str = date_raw
 
         meta_text = f"{points} pts"
@@ -120,10 +132,16 @@ class AchievementCard(QFrame):
         layout.addLayout(info_layout, 1)
 
     def mousePressEvent(self, event):
+        """Re-emit the raw achievement dict on every click."""
         self.clicked.emit(self.ach)
         super().mousePressEvent(event)
 
     def _load_badge_pixmap(self, badge_name: str) -> QPixmap:
+        """Load the badge, resize it to 64x64, and convert to a QPixmap.
+
+        Falls back to a flat gray square when no badge is available or when
+        loading fails.
+        """
         if not badge_name:
             pixmap = QPixmap(64, 64)
             pixmap.fill(QColor("#333333"))

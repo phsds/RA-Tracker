@@ -1,3 +1,14 @@
+"""Secure storage of RetroAchievements credentials.
+
+The API key and username are encrypted with RSA-4096/OAEP-SHA256 and written
+to ``~/.ra_tracker/credentials.enc``. A freshly generated private key is kept
+in ``~/.ra_tracker/private_key.pem``.
+
+Security note: the private key itself is stored unencrypted on disk, so this
+protects the credentials at rest but relies on OS user permissions as the real
+boundary (it is not a system-level secret vault).
+"""
+
 import json
 import os
 import base64
@@ -15,6 +26,7 @@ CRED_FILE = "credentials.enc"
 
 
 def _get_dir() -> Path:
+    """Return (and lazily create) the folder that holds secrets."""
     d = Path.home() / ".ra_tracker"
     d.mkdir(parents=True, exist_ok=True)
     return d
@@ -29,6 +41,7 @@ def _cred_path() -> Path:
 
 
 def _generate_key() -> rsa.RSAPrivateKey:
+    """Generate a new RSA-4096 key pair and save the private key to disk."""
     log.info("Gerando chave RSA-4096...")
     key = rsa.generate_private_key(
         public_exponent=65537,
@@ -46,6 +59,11 @@ def _generate_key() -> rsa.RSAPrivateKey:
 
 
 def _load_key() -> rsa.RSAPrivateKey:
+    """Load the saved private key, generating one the first time.
+
+    The key enables OAEP decryption of the credentials; only the public half
+    is ever used for encrypting.
+    """
     path = _key_path()
     if not path.exists():
         return _generate_key()
@@ -61,6 +79,11 @@ def _load_key() -> rsa.RSAPrivateKey:
 
 
 def encrypt_credentials(api_key: str, username: str):
+    """Encrypt ``api_key``/``username`` with the key's public half and save them.
+
+    Uses OAEP padding with SHA-256, then base64-encodes the ciphertext so the
+    file contains only printable characters.
+    """
     key = _load_key()
     public_key = key.public_key()
     data = json.dumps({"api_key": api_key, "username": username}).encode("utf-8")
@@ -78,6 +101,11 @@ def encrypt_credentials(api_key: str, username: str):
 
 
 def decrypt_credentials() -> dict[str, str] | None:
+    """Decrypt and return saved credentials, or ``None`` if none/wrong key.
+
+    A wrong or corrupt file produces ``None`` (never an exception) so the app
+    can simply fall back to showing the login form.
+    """
     path = _cred_path()
     if not path.exists():
         return None
@@ -100,6 +128,7 @@ def decrypt_credentials() -> dict[str, str] | None:
 
 
 def clear_credentials():
+    """Remove the credential and key files (used by the Logout button)."""
     for path in (_cred_path(), _key_path()):
         if path.exists():
             os.remove(path)

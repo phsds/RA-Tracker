@@ -1,3 +1,5 @@
+"""Background worker that fetches a user's achievements off the UI thread."""
+
 import logging
 from datetime import date
 
@@ -11,6 +13,13 @@ log = logging.getLogger(__name__)
 
 
 class FetchWorker(QObject):
+    """Fetch achievements for a user in a :class:`QThread`.
+
+    Emits ``finished`` (with the achievement list) or ``error`` (with a user
+    friendly message). The worker is moved to a worker thread by ``MainWindow``
+    so the heavy network work never blocks the GUI.
+    """
+
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
 
@@ -20,20 +29,26 @@ class FetchWorker(QObject):
         self.username = username
 
     def run(self):
+        """Load achievements: cache first, otherwise query the API and cache."""
         try:
+            # Serve from disk cache when available so repeat launches are
+            # instant and offline-friendly.
             cached = cache_mgr.load_achievements(self.username)
             if cached is not None:
                 log.info("Using achievement cache for %s", self.username)
                 self.finished.emit(cached)
                 return
 
+            # Fetch everything earned since the site's start date up to today.
             today = date.today().isoformat()
             data = self.client.get_achievements_between(self.username, "2000-01-01", today)
+            # Sort by game, then by earned date, so the UI shows a stable order.
             data.sort(key=lambda a: (
                 a.get("GameTitle", a.get("gameTitle", "")),
                 a.get("Date", a.get("date", "")),
             ))
             cache_mgr.save_achievements(self.username, data)
+            # Warm the badge cache in parallel for smooth scrolling.
             badge_names = list({
                 a.get("BadgeName", a.get("badgeName", ""))
                 for a in data if a.get("BadgeName", a.get("badgeName", ""))

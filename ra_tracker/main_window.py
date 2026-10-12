@@ -1,3 +1,5 @@
+"""Main application window: login, fetch and display of achievements."""
+
 import sys
 import logging
 from collections import OrderedDict
@@ -23,8 +25,19 @@ log = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
+    """Main UI: credential inputs, fetch controls, scrollable achievement list.
+
+    Responsible for validating the login against the API, saving/loading
+    credentials, running the fetch on a background thread and rendering the
+    achievements grouped by game.
+    """
+
     @staticmethod
     def _resource_path() -> Path:
+        """Return the directory with bundled resources (icon/logo).
+
+        Adapts to PyInstaller's ``--onefile`` extraction folder (``_MEIPASS``).
+        """
         if getattr(sys, "frozen", False):
             return Path(sys._MEIPASS) / "ra_tracker"
         return Path(__file__).parent
@@ -36,6 +49,7 @@ class MainWindow(QMainWindow):
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
         self.setMinimumSize(800, 600)
+        # Global dark "retro" theme applied to the main window.
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #0f0f23;
@@ -80,17 +94,21 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(8)
         main_layout.setContentsMargins(12, 12, 12, 12)
 
+        # -- Logo header ------------------------------------------------------
         logo_path = self._resource_path() / "images" / "RetroAchievements.png"
         logo_pixmap = QPixmap(str(logo_path))
         title_label = QLabel()
         if not logo_pixmap.isNull():
+            # Keep the height proportional while fixing the display width.
             scaled = logo_pixmap.scaledToWidth(180, Qt.TransformationMode.SmoothTransformation)
             title_label.setPixmap(scaled)
         else:
+            # Fallback text if the bundled PNG is missing.
             title_label.setText("RA Tracker")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(title_label)
 
+        # -- Credentials input panel ------------------------------------------
         input_widget = QWidget()
         input_widget.setStyleSheet("background-color: #1a1a2e; border-radius: 8px;")
         input_layout = QVBoxLayout(input_widget)
@@ -101,6 +119,7 @@ class MainWindow(QMainWindow):
         row1.setSpacing(6)
 
         self.api_key_input = QLineEdit()
+        # Mask the API key so it is not readable on screen.
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_key_input.setPlaceholderText("API Key")
         row1.addWidget(self.api_key_input, 1)
@@ -124,6 +143,7 @@ class MainWindow(QMainWindow):
         row2 = QHBoxLayout()
         row2.setSpacing(6)
 
+        # Invisible spacers keep the action buttons right-aligned.
         spacer1 = QWidget()
         spacer1.setFixedWidth(0)
         row2.addWidget(spacer1, 1)
@@ -144,6 +164,7 @@ class MainWindow(QMainWindow):
         input_layout.addLayout(row2)
         main_layout.addWidget(input_widget)
 
+        # -- Scrollable results area -------------------------------------------
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -163,9 +184,11 @@ class MainWindow(QMainWindow):
         self.client: RAClient | None = None
         self._logged_in = False
 
+        # Auto-login with previously saved credentials (if any).
         self._load_saved_credentials()
 
     def _validate_login(self):
+        """Validate the entered credentials against the API and store them."""
         api_key = self.api_key_input.text().strip()
         username = self.username_input.text().strip()
 
@@ -177,10 +200,12 @@ class MainWindow(QMainWindow):
         self.login_btn.setEnabled(False)
         self.login_btn.setText("Validating...")
         self.login_status.setText("")
+        # Let the UI repaint the disabled button before blocking on the request.
         QApplication.processEvents()
 
         try:
             client = RAClient(api_key)
+            # A successful summary response is our login validation.
             data = client.get_user_summary(username)
             if data:
                 self.client = client
@@ -188,6 +213,7 @@ class MainWindow(QMainWindow):
                 self.login_status.setStyleSheet("color: #66ff66;")
                 self.login_status.setText("Login OK")
                 self.status.showMessage(f"Logged in as {username}.")
+                # Persist the key for the next launch.
                 credential_manager.encrypt_credentials(api_key, username)
                 log.info("Valid login for %s", username)
                 self._fetch_achievements()
@@ -214,6 +240,7 @@ class MainWindow(QMainWindow):
         self.login_btn.setText("Validate Login")
 
     def _load_saved_credentials(self):
+        """Restore saved credentials (if any) and trigger a silent auto-login."""
         creds = credential_manager.decrypt_credentials()
         if creds:
             self.api_key_input.setText(creds.get("api_key", ""))
@@ -223,6 +250,7 @@ class MainWindow(QMainWindow):
             self._validate_login()
 
     def _clear_saved_credentials(self):
+        """Logout: erase stored credentials, inputs, and the results list."""
         credential_manager.clear_credentials()
         self.api_key_input.clear()
         self.username_input.clear()
@@ -234,17 +262,25 @@ class MainWindow(QMainWindow):
         self._clear_results()
 
     def _clear_results(self):
+        """Remove every widget currently shown in the results area."""
         for i in reversed(range(self.results_layout.count())):
             widget = self.results_layout.itemAt(i).widget()
             if widget:
                 widget.deleteLater()
 
     def _clear_cache(self):
+        """Delete the on-disk cache and the in-memory badge cache."""
         count = cache_mgr.clear_cache()
+        # The process-wide badge cache must be cleared too, or stale images win.
         RAClient._badge_cache.clear()
         self.status.showMessage(f"Cache cleared ({count} file(s))." if count else "Cache is empty.")
 
     def _fetch_achievements(self):
+        """Start the API fetch on a background QThread.
+
+        ``FetchWorker`` runs off-thread and talks back to the UI exclusively
+        through signals, which Qt marshals back to the main thread.
+        """
         api_key = self.api_key_input.text().strip()
         username = self.username_input.text().strip()
         log.info("Starting fetch: username=%s", username)
@@ -267,6 +303,7 @@ class MainWindow(QMainWindow):
         self._thread.start()
 
     def _on_fetch_finished(self, data: list):
+        """Render whatever the worker fetched."""
         self._display_achievements(data)
         if not data:
             log.info("No achievements found")
@@ -280,8 +317,14 @@ class MainWindow(QMainWindow):
         self.status.showMessage("Query error.")
 
     def _display_achievements(self, achievements: list[dict]):
+        """Rebuild the results area, one collapsible section per game.
+
+        Cards are laid out in a grid whose column count adapts to the window
+        width (``width() // 650`` cards per row).
+        """
         self._clear_results()
 
+        # Group achievements by game title, preserving first-seen order.
         groups: OrderedDict[str, list[dict]] = OrderedDict()
         for ach in achievements:
             game = ach.get("GameTitle", ach.get("gameTitle", "?"))
@@ -302,9 +345,11 @@ class MainWindow(QMainWindow):
 
             self.results_layout.addWidget(section)
 
+        # Push everything to the top when there is spare vertical space.
         self.results_layout.addStretch()
 
     def _open_detail(self, ach: dict):
+        """Open the detailed achievement dialog (modal)."""
         if not self.client:
             return
         dialog = AchievementDetailDialog(ach, self.client, self)

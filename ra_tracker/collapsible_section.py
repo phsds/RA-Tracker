@@ -1,3 +1,5 @@
+"""Collapsible group widget used to organize achievements by game."""
+
 import logging
 
 from PyQt6.QtWidgets import (
@@ -9,6 +11,13 @@ log = logging.getLogger(__name__)
 
 
 class CollapsibleSection(QFrame):
+    """A titled section that can be expanded or collapsed with one click.
+
+    The clickable header shows the game title and achievement count; clicking
+    it toggles the visibility of the card grid below. The grid is exposed via
+    :meth:`grid` so the caller can fill it with achievement cards.
+    """
+
     def __init__(self, title: str, count: int, parent=None):
         super().__init__(parent)
         self.setStyleSheet("""
@@ -54,10 +63,12 @@ class CollapsibleSection(QFrame):
         content_layout.addLayout(self._content_grid)
         main_layout.addWidget(self._content)
 
+        # Default to expanded so all groups are visible right after a fetch.
         self._expanded = True
         self._update_header()
 
     def grid(self) -> QGridLayout:
+        """Return the grid that holds this section's achievement cards."""
         return self._content_grid
 
     def _update_header(self):
@@ -70,6 +81,7 @@ class CollapsibleSection(QFrame):
         self._update_header()
 
     def set_collapsed(self):
+        """Force the section into its collapsed state (no content visible)."""
         self._expanded = False
         self._content.setVisible(False)
         self._update_header()

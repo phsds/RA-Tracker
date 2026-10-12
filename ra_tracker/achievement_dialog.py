@@ -1,3 +1,5 @@
+"""Detail dialog for a single achievement, with game stats and a comparison bar."""
+
 import logging
 from datetime import datetime
 from io import BytesIO
@@ -17,6 +19,13 @@ log = logging.getLogger(__name__)
 
 
 class ComparisonBar(QWidget):
+    """Horizontal bar showing the softcore vs. hardcore earning split.
+
+    The green slice represents softcore earns (``soft_value``) and the red
+    slice represents hardcore earns (``hard_value``), with each percentage
+    label drawn inside its own slice when there is room.
+    """
+
     def __init__(self, soft_value: int, hard_value: int, parent=None):
         super().__init__(parent)
         self._soft = soft_value
@@ -31,13 +40,16 @@ class ComparisonBar(QWidget):
         return QSize(200, 22)
 
     def paintEvent(self, event):
+        """Draw the two colored slices and the border in one painter pass."""
         if self._total == 0:
+            # Nothing earned yet: leave the bar blank.
             return
         p = QPainter(self)
         w = self.width()
         h = self.height()
+        # Width of each slice is proportional to its share of the total.
         soft_w = int(w * self._soft / self._total)
-        hard_w = w - soft_w
+        hard_w = w - soft_w  # remainder to avoid rounding gaps
 
         p.setPen(Qt.PenStyle.NoPen)
         p.setBrush(QBrush(QColor("#66ff66")))
@@ -47,6 +59,8 @@ class ComparisonBar(QWidget):
 
         font = QFont("Press Start 2P", 8)
         p.setFont(font)
+        # Text color contrasts against the opposite slice: dark-on-green uses
+        # the hardcore red pen, and vice versa.
         if soft_w > 40:
             p.setPen(QPen(QColor("#ff4444")))
             p.drawText(4, 0, soft_w - 4, h, Qt.AlignmentFlag.AlignVCenter, self._soft_pct)
@@ -61,12 +75,20 @@ class ComparisonBar(QWidget):
 
 
 class AchievementDetailDialog(QDialog):
+    """Modal dialog showing full details for one achievement.
+
+    Includes the badge, title/description, points, true ratio, earned date,
+    and (when available) the game cover plus softcore/hardcore stats for that
+    achievement.
+    """
+
     def __init__(self, ach: dict, client: RAClient, parent=None):
         super().__init__(parent)
         self.ach = ach
         self.client = client
         self.setWindowTitle(ach.get("Title", ach.get("title", "Achievement")))
         self.setMinimumSize(500, 400)
+        # Dark theme matching the main window.
         self.setStyleSheet("""
             QDialog {
                 background-color: #0f0f23;
@@ -80,6 +102,7 @@ class AchievementDetailDialog(QDialog):
         layout.setSpacing(12)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        # -- Top row: badge + summary -----------------------------
         top_layout = QHBoxLayout()
         top_layout.setSpacing(16)
 
@@ -128,8 +151,10 @@ class AchievementDetailDialog(QDialog):
                 dt = datetime.strptime(date_raw, "%Y-%m-%d %H:%M:%S")
                 date_str = dt.strftime("%d/%m/%Y %H:%M")
             except ValueError:
+                # Fall back to the raw string when the format is unexpected.
                 date_str = date_raw
 
+        # -- Meta pills: points / true ratio / hardcore / date ------
         meta_widget = QWidget()
         meta_widget.setStyleSheet("background-color: #2a2a4e; border-radius: 6px; padding: 0px;")
         meta_layout = QHBoxLayout(meta_widget)
@@ -165,6 +190,7 @@ class AchievementDetailDialog(QDialog):
         top_layout.addLayout(info_layout, 1)
         layout.addLayout(top_layout)
 
+        # Fetch game info lazily; only when the achievement has a game id.
         game_id = ach.get("GameID", ach.get("gameId"))
         if game_id:
             self._load_game_info(game_id)
@@ -188,6 +214,7 @@ class AchievementDetailDialog(QDialog):
         layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def _load_badge_pixmap(self, badge_name: str) -> QPixmap:
+        """Load and resize the badge to 80x80, with a gray placeholder fallback."""
         if not badge_name:
             pixmap = QPixmap(80, 80)
             pixmap.fill(QColor("#333333"))
@@ -209,6 +236,11 @@ class AchievementDetailDialog(QDialog):
         return pixmap
 
     def _load_game_info(self, game_id: int):
+        """Fetch game metadata and insert a stats panel (cover + info).
+
+        Uses the disk cache first; on a miss it queries the API and saves the
+        result for next time. Any failure simply skips the panel.
+        """
         try:
             data = cache_mgr.load_game_data(game_id)
             if data is None:
@@ -224,6 +256,7 @@ class AchievementDetailDialog(QDialog):
         outer_layout.setSpacing(20)
 
         def _load_image_pixmap(path: str, size: tuple[int, int]) -> QPixmap | None:
+            """Download a site image at ``path`` and resize it to ``size``."""
             img = RAClient.load_image(path)
             if not img:
                 return None
@@ -235,6 +268,7 @@ class AchievementDetailDialog(QDialog):
             pixmap.loadFromData(buffer.getvalue())
             return pixmap
 
+        # -- Box-art cover ----------------------------------------------------
         cover_path = data.get("ImageBoxArt", data.get("imageBoxArt", ""))
         if cover_path:
             pixmap = _load_image_pixmap(cover_path, (180, 252))
@@ -266,6 +300,7 @@ class AchievementDetailDialog(QDialog):
         achs_label.setStyleSheet("color: #ffd700; padding: 4px 0px;")
         right_layout.addWidget(achs_label)
 
+        # Build label/value rows only for fields the API actually filled in.
         info_lines = []
         if publisher:
             info_lines.append(("🏢 Publisher", publisher))
@@ -274,6 +309,7 @@ class AchievementDetailDialog(QDialog):
         if genre:
             info_lines.append(("🎮 Genre", genre))
         if released:
+            # "<date>" would be nicer, but years like "2016" are already fine.
             info_lines.append(("📅 Release", released[:4] if len(released) > 4 else released))
 
         if info_lines:
@@ -290,6 +326,7 @@ class AchievementDetailDialog(QDialog):
                 info_grid.addWidget(v, i, 1)
             right_layout.addLayout(info_grid)
 
+        # -- Per-achievement stats (softcore/hardcore earn split) ------------
         achs = data.get("Achievements", data.get("achievements", {}))
         ach_id = str(self.ach.get("AchievementID", self.ach.get("achievementId", "")))
         ach_data = achs.get(ach_id)
@@ -325,6 +362,7 @@ class AchievementDetailDialog(QDialog):
                 ach_grid.addWidget(v, i, 1)
             right_layout.addLayout(ach_grid)
 
+            # Only show the visual split bar when there is data to draw.
             if num_awarded or num_awarded_hc:
                 ach_bar_row = QHBoxLayout()
                 ach_bar_row.setSpacing(8)
@@ -337,4 +375,6 @@ class AchievementDetailDialog(QDialog):
 
         right_layout.addStretch()
         outer_layout.addLayout(right_layout, 1)
+        # Insert the panel after the top summary (index 1), before the close
+        # button currently at the end of the dialog's main layout.
         self.layout().insertWidget(1, info_widget)
